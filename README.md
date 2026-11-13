@@ -21,13 +21,13 @@ and does nothing.
 ## Install
 
 ```bash
-herdr plugin install malone-c/herdr-reincarnate
+herdr plugin install malone-c/reincarnate
 ```
 
 Or link a clone if you want to hack on it:
 
 ```bash
-herdr plugin link /path/to/herdr-reincarnate
+herdr plugin link /path/to/reincarnate
 ```
 
 Bind it in `config.toml`:
