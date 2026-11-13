@@ -1,4 +1,4 @@
-# Agent Handoff — herdr plugin
+# Handoff — herdr plugin
 
 One action, `handoff`, that hands the task in the focused pane's Claude Code
 session to a fresh session in a new split to the right. The new pane runs
@@ -21,7 +21,13 @@ and does nothing.
 ## Install
 
 ```bash
-herdr plugin link /path/to/herdr-agent-handoff
+herdr plugin install malone-c/herdr-handoff
+```
+
+Or link a clone if you want to hack on it:
+
+```bash
+herdr plugin link /path/to/herdr-handoff
 ```
 
 Bind it in `config.toml`:
@@ -30,7 +36,7 @@ Bind it in `config.toml`:
 [[keys.command]]
 key = "prefix+h"
 type = "plugin_action"
-command = "chrismalone.agent-handoff.handoff"
+command = "chrismalone.handoff.handoff"
 description = "hand off claude session"
 ```
 
