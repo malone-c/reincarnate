@@ -34,7 +34,7 @@ Bind it in `config.toml`:
 
 ```toml
 [[keys.command]]
-key = "prefix+h"
+key = "prefix+shift+f"
 type = "plugin_action"
 command = "chrismalone.handoff.handoff"
 description = "hand off claude session"
