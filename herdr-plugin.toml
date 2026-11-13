@@ -1,12 +1,12 @@
-id = "chrismalone.handoff"
-name = "Handoff"
+id = "chrismalone.reincarnate"
+name = "Reincarnate"
 version = "0.1.0"
 min_herdr_version = "0.9.3"
 description = "Hands the focused Claude Code session's task to a fresh session in a new split"
 platforms = ["linux", "macos"]
 
 [[actions]]
-id = "handoff"
-title = "Hand off focused Claude Code session"
+id = "reincarnate"
+title = "Reincarnate focused Claude Code session"
 contexts = ["workspace", "pane"]
-command = ["uv", "run", "--script", "handoff.py"]
+command = ["uv", "run", "--script", "reincarnate.py"]

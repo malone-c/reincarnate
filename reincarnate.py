@@ -36,7 +36,7 @@ source_pane = (run_herdr("pane", "get", source_pane_id) or {}).get("pane") or {}
 session = source_pane.get("agent_session") or {}
 
 if source_pane.get("agent") != "claude" or session.get("kind") != "id":
-    toast("🤝 no Claude Code session in this pane")
+    toast("👻 no Claude Code session in this pane")
     raise SystemExit(0)
 
 session_id = session["value"]
@@ -47,7 +47,7 @@ prompt = f"You are continuing Claude Code session {session_id}.{transcript_note}
 cwd = source_pane.get("foreground_cwd") or source_pane.get("cwd") or os.path.expanduser("~")
 split = run_herdr("pane", "split", source_pane_id, "--direction", "right", "--cwd", cwd, "--focus")
 if not split:
-    toast("🤝 handoff failed: could not split the pane")
+    toast("👻 reincarnate failed: could not split the pane")
     raise SystemExit(0)
 
 # Typed into the new shell so the user's claude alias and PATH apply
