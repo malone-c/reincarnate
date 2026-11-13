@@ -1,0 +1,12 @@
+id = "chrismalone.agent-handoff"
+name = "Agent Handoff"
+version = "0.1.0"
+min_herdr_version = "0.9.3"
+description = "Hands the focused Claude Code session's task to a fresh session in a new split"
+platforms = ["linux", "macos"]
+
+[[actions]]
+id = "handoff"
+title = "Hand off focused Claude Code session"
+contexts = ["workspace", "pane"]
+command = ["uv", "run", "--script", "handoff.py"]
