@@ -2,7 +2,9 @@
 
 Hand a pointer to this session's logs to a new Claude Code session. Useful when context is overfilled.
 
-> You are continuing Claude Code session {session_id}.{transcript_note} Pick up where it left off.
+> You are continuing Claude Code session {session_id}.{transcript_note} Pick up where it left off. {takeover}
+
+`{takeover}` gives the new session permission to kill the old one and lists the old session's background shells for it to take over. Then the old session is killed with SIGKILL, which leaves those shells running.
 
 ## Requirements
 
