@@ -18,6 +18,7 @@ import re
 import shlex
 import signal
 import subprocess
+import sys
 from pathlib import Path
 
 herdr = os.environ.get("HERDR_BIN_PATH") or "herdr"
@@ -61,23 +62,23 @@ processes = [fields for fields in (line.split(None, 2) for line in ps_lines) if 
 session_pid = next((pid for pid, _, command in processes if pid in recorded_pids and "claude" in command), None)
 
 # Background shells are the session's children writing to a tasks/*.output file
-children = [(pid, command) for pid, ppid, command in processes if ppid == session_pid]
-output_by_pid = {}
-if children:
-    lsof_pid = ""
-    lsof_args = ["lsof", "-a", "-d", "1", "-Fpn", "-p", ",".join(pid for pid, _ in children)]
-    for line in subprocess.run(lsof_args, capture_output=True, text=True).stdout.splitlines():
-        if line.startswith("p"):
-            lsof_pid = line[1:]
-        elif line.startswith("n") and re.search(r"/tasks/[^/]+\.output$", line):
-            output_by_pid[lsof_pid] = line[1:]
 shells = []
-for pid, command in children:
-    if pid in output_by_pid:
+for pid, ppid, command in processes:
+    if ppid != session_pid:
+        continue
+    if sys.platform == "linux":
+        try:
+            output = os.readlink(f"/proc/{pid}/fd/1")
+        except OSError:
+            output = ""
+    else:
+        lsof = subprocess.run(["lsof", "-a", "-p", pid, "-d", "1", "-Fn"], capture_output=True, text=True).stdout
+        output = next((line[1:] for line in lsof.splitlines() if line.startswith("n")), "")
+    if re.search(r"/tasks/[^/]+\.output$", output):
         # The Bash tool runs each command as `eval '<command>' < /dev/null`
         eval_match = re.search(r"eval '(.*)' < /dev/null", command)
         shown_command = (eval_match.group(1).replace("'\"'\"'", "'") if eval_match else command)[:300]
-        shells.append(f"PID {pid}, output {output_by_pid[pid]}: {shown_command}")
+        shells.append(f"PID {pid}, output {output}: {shown_command}")
 
 # One line, since it is typed into a shell
 if session_pid is None:
