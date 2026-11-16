@@ -6,8 +6,9 @@
 
 The new pane starts `claude` with a prompt naming the old session, its
 transcript and its background shells, so it can pick up where that session
-left off. Then kills the old session with SIGKILL, which leaves its background
-shells running. Failures show as a toast. Never exits nonzero: a keybind must
+left off. Once herdr sees Claude Code running in the new pane, kills the old
+session with SIGKILL, which leaves its background shells running. Writes the
+prompt to a temp file. Failures show as a toast. Never exits nonzero: a keybind must
 not break the multiplexer.
 """
 
@@ -19,6 +20,7 @@ import shlex
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -154,8 +156,21 @@ if not split:
     toast("👻 reincarnate failed: could not split the pane")
     raise SystemExit(0)
 
+# macOS cuts a typed line at 1024 bytes, so the prompt goes through a file
+with tempfile.NamedTemporaryFile("w", prefix=f"reincarnate-{session_id}-", suffix=".txt", delete=False) as prompt_file:
+    prompt_file.write(prompt)
+new_pane_id = split["pane"]["pane_id"]
 # Typed into the new shell so the user's claude alias and PATH apply
-subprocess.run([herdr, "pane", "run", split["pane"]["pane_id"], f"claude {shlex.quote(prompt)}"], capture_output=True)
+subprocess.run([herdr, "pane", "run", new_pane_id, f'claude "$(cat {shlex.quote(prompt_file.name)})"'], capture_output=True)
+
+# Keep the old session alive unless herdr sees Claude Code start in the new pane
+for _ in range(60):
+    if ((run_herdr("pane", "get", new_pane_id) or {}).get("pane") or {}).get("agent") == "claude":
+        break
+    time.sleep(0.5)
+else:
+    toast("👻 reincarnate failed: the new session did not start", f"Old session left running. Prompt: {prompt_file.name}")
+    raise SystemExit(0)
 
 if session_pid is not None:
     # SIGKILL skips Claude Code's exit cleanup, so its background shells keep running
