@@ -53,6 +53,26 @@ session_id = session["value"]
 transcripts = glob.glob(os.path.expanduser(f"~/.claude/projects/*/{session_id}.jsonl"))
 transcript_note = f" Its transcript is {transcripts[0]}." if transcripts else ""
 
+# the last goal_status row holds the /goal in force
+goal = None
+if transcripts:
+    with open(transcripts[0], errors="replace") as transcript:
+        for line in transcript:
+            if '"type":"goal_status"' not in line:
+                continue
+            # the live session may be mid-write on its last row
+            try:
+                goal_status = json.loads(line)["attachment"]
+            except (ValueError, KeyError):
+                continue
+            goal = None if goal_status.get("met") or goal_status.get("failed") else goal_status.get("condition") or None
+goal_note = (
+    f' Its session goal, a /goal stop check, carries over to you: "{goal}". '
+    "The check reads only this conversation, so before you stop, show here that the goal holds."
+    if goal
+    else ""
+)
+
 
 # Find the session's process and background shells; whatever cannot be confirmed goes in takeover_problems
 takeover_problems = []
@@ -148,7 +168,7 @@ if takeover_problems:
     )
 elif not shells:
     takeover += " It left no background shells running."
-prompt = f"You are continuing Claude Code session {session_id}.{transcript_note} Pick up where it left off. {takeover}"
+prompt = f"You are continuing Claude Code session {session_id}.{transcript_note} Pick up where it left off.{goal_note} {takeover}"
 
 cwd = source_pane.get("foreground_cwd") or source_pane.get("cwd") or os.path.expanduser("~")
 split = run_herdr("pane", "split", source_pane_id, "--direction", "right", "--cwd", cwd, "--focus")
@@ -187,5 +207,11 @@ if session_pid is not None:
         else:
             takeover_problems.append(f"PID {session_pid} still exists 2 s after SIGKILL")
 
+if goal:
+    # sent mid-turn, so the takeover prompt runs first
+    working = subprocess.run([herdr, "agent", "wait", new_pane_id, "--until", "working", "--timeout", "30000"], capture_output=True)
+    if working.returncode != 0 or subprocess.run([herdr, "agent", "prompt", new_pane_id, f"/goal {goal}"], capture_output=True).returncode != 0:
+        takeover_problems.append(f"could not set the goal on the new session, so run /goal there: {goal}")
+
 if takeover_problems:
-    toast("👻 reincarnate could not hand over every process", "\n".join(takeover_problems))
+    toast("👻 reincarnate could not hand over everything", "\n".join(takeover_problems))

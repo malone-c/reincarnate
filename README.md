@@ -2,7 +2,9 @@
 
 Hand a pointer to this session's logs to a new Claude Code session. Useful when context is overfilled.
 
-> You are continuing Claude Code session {session_id}.{transcript_note} Pick up where it left off. {takeover}
+> You are continuing Claude Code session {session_id}.{transcript_note} Pick up where it left off.{goal_note} {takeover}
+
+`{goal_note}` names the old session's `/goal`, if one is still in force. Once the new session is working, reincarnate types the same `/goal` into it; if that fails, a herdr notification says so.
 
 `{takeover}` gives the new session permission to kill the old one and lists the old session's background shells for it to take over. Then the old session is killed with SIGKILL, which leaves those shells running. Anything it cannot confirm (the old session's process, a shell's output, the kill) is named in `{takeover}` and in a herdr notification, and an unconfirmed process is never killed.
 
