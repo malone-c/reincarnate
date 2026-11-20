@@ -209,8 +209,23 @@ if session_pid is not None:
 
 if goal:
     # sent mid-turn, so the takeover prompt runs first
-    working = subprocess.run([herdr, "agent", "wait", new_pane_id, "--until", "working", "--timeout", "30000"], capture_output=True)
-    if working.returncode != 0 or subprocess.run([herdr, "agent", "prompt", new_pane_id, f"/goal {goal}"], capture_output=True).returncode != 0:
+    working = run_herdr("agent", "wait", new_pane_id, "--until", "working", "--timeout", "30000")
+    successor_id = (((working or {}).get("agent") or {}).get("agent_session") or {}).get("value")
+    goal_typed = successor_id is not None
+    # Claude Code sends a folded paste of "/goal …" as a message
+    for keystroke in (["send-text", new_pane_id, "/goal "], ["send-text", new_pane_id, goal], ["send-keys", new_pane_id, "enter"]):
+        if goal_typed:
+            goal_typed = subprocess.run([herdr, "pane", *keystroke], capture_output=True).returncode == 0
+            time.sleep(0.3)
+    # a goal_status row shows the goal was set
+    goal_set = False
+    for _ in range(50 if goal_typed else 0):
+        successor_transcripts = glob.glob(os.path.expanduser(f"~/.claude/projects/*/{successor_id}.jsonl"))
+        goal_set = any('"type":"goal_status"' in Path(path).read_text(errors="replace") for path in successor_transcripts)
+        if goal_set:
+            break
+        time.sleep(0.2)
+    if not goal_set:
         takeover_problems.append(f"could not set the goal on the new session, so run /goal there: {goal}")
 
 if takeover_problems:
